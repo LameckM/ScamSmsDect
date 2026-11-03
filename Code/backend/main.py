@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from .config import settings
 from .database import Base, SessionLocal, engine
 from .routers import moderation, numbers, reports
+from .ml import reviews
 from .seed_data import ensure_default_patterns
 
 
@@ -42,6 +43,7 @@ app.add_middleware(
 app.include_router(reports.router)
 app.include_router(numbers.router)
 app.include_router(moderation.router)
+app.include_router(reviews.router)
 
 
 @app.get("/", include_in_schema=False)
