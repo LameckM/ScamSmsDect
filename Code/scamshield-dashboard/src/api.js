@@ -55,3 +55,26 @@ export function moderateNumber(number, action, moderatorKey) {
 }
 
 export { API_BASE_URL }
+
+
+function moderatorRequest(path, moderatorKey, options = {}) {
+  return request(path, { ...options, headers: { 'X-Moderator-Key': moderatorKey, ...(options.headers || {}) } })
+}
+
+export function listReviewMessages(moderatorKey, status = 'pending') {
+  return moderatorRequest(`/review/messages?status=${encodeURIComponent(status)}`, moderatorKey)
+}
+
+export function labelReviewMessage(reportId, label, moderatorKey, note = '') {
+  return moderatorRequest(`/review/messages/${reportId}`, moderatorKey, {
+    method: 'POST', body: JSON.stringify({ label, note }),
+  })
+}
+
+export function trainCandidate(moderatorKey) {
+  return moderatorRequest('/review/train', moderatorKey, { method: 'POST' })
+}
+
+export function activateCandidate(moderatorKey) {
+  return moderatorRequest('/review/activate', moderatorKey, { method: 'POST' })
+}
