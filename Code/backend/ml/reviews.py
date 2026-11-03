@@ -1,5 +1,8 @@
 """Moderator review endpoints. Phone-number decisions are not message labels."""
 from datetime import datetime, timezone
+import os
+import shutil
+from pathlib import Path
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -66,3 +69,19 @@ def train_reviewed_model():
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return {"status": "candidate_ready", "metrics": metrics, "deployed": False}
+
+
+@router.post("/activate", dependencies=[Depends(verify_moderator)])
+def activate_candidate():
+    """Promote a reviewed candidate artifact to the active inference path."""
+    directory = Path(os.getenv("SCAM_MODEL_DIR", "backend/ml/artifacts"))
+    candidate = directory / "candidate.joblib"
+    active = Path(os.getenv("SCAM_ACTIVE_MODEL_PATH", str(directory / "active.joblib")))
+    metrics = directory / "candidate_metrics.json"
+    if not candidate.is_file() or not metrics.is_file():
+        raise HTTPException(status_code=409, detail="No complete candidate model is available")
+    active.parent.mkdir(parents=True, exist_ok=True)
+    temporary = active.with_suffix(active.suffix + ".new")
+    shutil.copyfile(candidate, temporary)
+    os.replace(temporary, active)
+    return {"status": "active", "model_path": str(active), "note": "Activation requested. Model scores are advisory; monitor quality and false positives."}
