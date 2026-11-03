@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..database import get_db
 from ..routers.moderation import verify_moderator
+from .train import train as train_candidate
 
 router = APIRouter(prefix="/review", tags=["message review"])
 
@@ -55,3 +56,13 @@ def label_message(report_id: int, payload: ReviewLabel, db: Session = Depends(ge
         review.reviewed_at = datetime.now(timezone.utc)
     db.commit()
     return {"report_id": report_id, "label": review.label, "reviewed_at": review.reviewed_at, "training_eligible": True}
+
+
+@router.post("/train", dependencies=[Depends(verify_moderator)])
+def train_reviewed_model():
+    """Train a candidate from confirmed labels. Candidate is not activated automatically."""
+    try:
+        metrics = train_candidate()
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return {"status": "candidate_ready", "metrics": metrics, "deployed": False}
