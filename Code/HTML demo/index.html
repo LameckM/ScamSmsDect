@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ScamShield - interactive demo</title>
+<style>
+  :root {
+    --surface-2: #ffffff;
+    --surface-1: #f1efe8;
+    --surface-0: #f7f6f2;
+    --text-primary: #141413;
+    --text-secondary: #5f5e5a;
+    --text-muted: #888780;
+    --border: rgba(20,20,19,0.12);
+    --border-strong: rgba(20,20,19,0.2);
+    --radius: 8px;
+    --bg-accent: #E6F1FB;   --text-accent: #0C447C;
+    --bg-warning: #FAEEDA;  --text-warning: #854F0B;
+    --bg-danger: #FCEBEB;   --text-danger: #A32D2D;
+    --bg-success: #EAF3DE;  --text-success: #3B6D11;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-2: #2b2a27;
+      --surface-1: #232220;
+      --surface-0: #1c1b19;
+      --text-primary: #f1efe8;
+      --text-secondary: #b4b2a9;
+      --text-muted: #888780;
+      --border: rgba(241,239,232,0.14);
+      --border-strong: rgba(241,239,232,0.22);
+      --bg-accent: #0c447c;   --text-accent: #b5d4f4;
+      --bg-warning: #633806;  --text-warning: #fac775;
+      --bg-danger: #791f1f;   --text-danger: #f7c1c1;
+      --bg-success: #27500a;  --text-success: #c0dd97;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 1.75rem;
+  }
+  input, textarea, button {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  input, textarea {
+    background: var(--surface-1);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    width: 100%;
+    resize: vertical;
+  }
+  input:focus, textarea:focus, button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg-accent);
+    border-color: var(--text-accent);
+  }
+  button {
+    background: transparent;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: var(--surface-1);
+  }
+  button:active {
+    transform: scale(0.98);
+  }
+  .ss-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 4px;
+    display: block;
+  }
+  .ss-row {
+    display: grid;
+    grid-template-columns: minmax(150px,1.3fr) 56px 56px 130px minmax(150px,1fr);
+    gap: 8px;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .ss-row.head {
+    color: var(--text-secondary);
+    font-size: 12px;
+    border-bottom: 0.5px solid var(--border-strong);
+  }
+  .ss-badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 3px 9px;
+    border-radius: var(--radius);
+  }
+  .ss-flag {
+    display: inline-block;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    margin: 0 6px 6px 0;
+    background: var(--surface-1);
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>ScamShield demo</h1>
+  <p class="subtitle">Submit a reported SMS to see it scored, then act as a moderator on flagged numbers below.</p>
+
+  <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem">
+    <label class="ss-label" for="ss-number">Reported number</label>
+    <input type="text" id="ss-number" value="+260 977 667 444" style="margin-bottom:12px" />
+    <label class="ss-label" for="ss-message">Message content</label>
+    <textarea id="ss-message" rows="3" style="margin-bottom:12px">Congratulations! You have won K5,000 in the MTN promo. Send your PIN to 0966 000 000 within 24 hours to claim your prize. Click http://bit.ly/claim-prize now before it expires!</textarea>
+    <button id="ss-submit">Analyze report</button>
+  </div>
+
+  <div id="ss-result" style="display:none;margin-bottom:1.5rem">
+    <span class="ss-label">Detected risk signals</span>
+    <div id="ss-flags"></div>
+    <p style="font-size:24px;font-weight:600;margin:8px 0 0" id="ss-score"></p>
+    <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 0" id="ss-summary"></p>
+  </div>
+
+  <div class="ss-row head">
+    <span>Number</span><span>Reports</span><span>Score</span><span>Status</span><span>Moderator action</span>
+  </div>
+  <div id="ss-list"></div>
+
+</div>
+
+<script>
+const REPORT_THRESHOLD = 3;
+const SCORE_THRESHOLD = 55;
+
+const scamPhrases = ['congratulations','you have won','winner','lottery','prize','claim your','free gift','cash prize','jackpot'];
+const urgencyPhrases = ['urgent','immediately','expires','expire','act now','limited time','24 hours','before it expires','hurry'];
+const moneyPhrases = ['send money','deposit','transfer fee','processing fee','mobile money','western union','pay now','send your pin to'];
+const infoPhrases = ['pin','otp','password','verify your account','card number','cvv','account number','one time password'];
+const urlPattern = /https?:\/\/|www\.|bit\.ly|\.com\b|\.net\b/i;
+
+function analyzeMessage(text) {
+  const lower = text.toLowerCase();
+  const flags = [];
+  let score = 0;
+  if (scamPhrases.some(p => lower.includes(p))) { flags.push('Prize or lottery language'); score += 25; }
+  if (urgencyPhrases.some(p => lower.includes(p))) { flags.push('Urgency cues'); score += 20; }
+  if (moneyPhrases.some(p => lower.includes(p))) { flags.push('Requests money or payment'); score += 25; }
+  if (infoPhrases.some(p => lower.includes(p))) { flags.push('Requests sensitive info'); score += 25; }
+  if (urlPattern.test(lower)) { flags.push('Contains a link'); score += 15; }
+  return { score: Math.min(100, score), flags: flags };
+}
+
+function aggregateScore(entry) {
+  const avg = entry.messages.reduce((s, m) => s + m.score, 0) / entry.messages.length;
+  const boosted = avg * (1 + Math.min(entry.messages.length, 8) * 0.04);
+  return Math.min(100, Math.round(boosted));
+}
+
+function statusFor(entry) {
+  if (entry.manual) return entry.manual;
+  if (entry.messages.length >= REPORT_THRESHOLD && aggregateScore(entry) >= SCORE_THRESHOLD) return 'flagged';
+  return 'monitoring';
+}
+
+const STATUS_LABEL = {
+  monitoring: 'Monitoring',
+  flagged: 'Flagged for review',
+  escalated: 'Escalated to MNO',
+  cleared: 'Cleared'
+};
+
+const reports = {
+  '+260 97X XXX 111': { messages: [
+    { score: analyzeMessage('Congratulations! You have won K8,000 in the lottery. Click http://bit.ly/win-now and send your PIN immediately.').score },
+    { score: analyzeMessage('URGENT: claim your cash prize before it expires. Send your PIN to confirm.').score },
+    { score: analyzeMessage('You are a winner! Reply with your account number to claim your free gift now.').score },
+    { score: analyzeMessage('Final notice: your prize expires in 24 hours. Click www.claim-prize.com now.').score },
+    { score: analyzeMessage('Congratulations, jackpot winner! Send mobile money transfer fee to release funds.').score }
+  ], manual: 'escalated' },
+  '+260 96X XXX 222': { messages: [
+    { score: analyzeMessage('Hi, are we still meeting tomorrow at 2pm?').score },
+    { score: analyzeMessage('Reminder: your appointment is confirmed for Friday.').score }
+  ], manual: null },
+  '+260 95X XXX 333': { messages: [
+    { score: analyzeMessage('Your mobile money account will be suspended. Verify by sending your OTP and pay a small reactivation fee now.').score },
+    { score: analyzeMessage('URGENT: your account is suspended. Verify your account immediately or pay a processing fee to reactivate.').score },
+    { score: analyzeMessage('Act now: send your one time password and a transfer fee within 24 hours to keep your mobile money account active.').score },
+    { score: analyzeMessage('Final notice: verify your account today by sending your card number and mobile money transfer fee.').score }
+  ], manual: null }
+};
+
+function render() {
+  const list = document.getElementById('ss-list');
+  list.innerHTML = '';
+  const badgeColors = {
+    monitoring: ['var(--bg-accent)', 'var(--text-accent)'],
+    flagged: ['var(--bg-warning)', 'var(--text-warning)'],
+    escalated: ['var(--bg-danger)', 'var(--text-danger)'],
+    cleared: ['var(--bg-success)', 'var(--text-success)']
+  };
+  Object.keys(reports).forEach(number => {
+    const entry = reports[number];
+    const score = aggregateScore(entry);
+    const status = statusFor(entry);
+    const colors = badgeColors[status];
+    const row = document.createElement('div');
+    row.className = 'ss-row';
+    let actionsHtml = '<span style="color:var(--text-muted)">-</span>';
+    if (status === 'flagged') {
+      actionsHtml = '<div style="display:flex;gap:6px"><button data-action="escalate" data-number="' + number + '" style="font-size:12px;padding:4px 8px">Confirm</button><button data-action="clear" data-number="' + number + '" style="font-size:12px;padding:4px 8px">Dismiss</button></div>';
+    }
+    row.innerHTML =
+      '<span>' + number + '</span>' +
+      '<span>' + entry.messages.length + '</span>' +
+      '<span>' + score + '</span>' +
+      '<span class="ss-badge" style="background:' + colors[0] + ';color:' + colors[1] + '">' + STATUS_LABEL[status] + '</span>' +
+      '<span>' + actionsHtml + '</span>';
+    list.appendChild(row);
+  });
+  list.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const num = btn.getAttribute('data-number');
+      const action = btn.getAttribute('data-action');
+      reports[num].manual = action === 'escalate' ? 'escalated' : 'cleared';
+      render();
+    });
+  });
+}
+
+document.getElementById('ss-submit').addEventListener('click', () => {
+  const numberInput = document.getElementById('ss-number');
+  const messageInput = document.getElementById('ss-message');
+  const number = numberInput.value.trim();
+  const text = messageInput.value.trim();
+  if (!number || !text) return;
+  const result = analyzeMessage(text);
+  if (!reports[number]) reports[number] = { messages: [], manual: null };
+  reports[number].messages.push({ score: result.score });
+
+  const flagsDiv = document.getElementById('ss-flags');
+  flagsDiv.innerHTML = result.flags.length
+    ? result.flags.map(f => '<span class="ss-flag">' + f + '</span>').join('')
+    : '<span class="ss-flag">No scam indicators detected</span>';
+
+  const scoreEl = document.getElementById('ss-score');
+  scoreEl.textContent = 'Message risk score: ' + result.score + '/100';
+  scoreEl.style.color = result.score >= 70 ? 'var(--text-danger)' : (result.score >= 40 ? 'var(--text-warning)' : 'var(--text-success)');
+
+  const entry = reports[number];
+  const agg = aggregateScore(entry);
+  const status = statusFor(entry);
+  const summaryEl = document.getElementById('ss-summary');
+  summaryEl.textContent = number + ' now has ' + entry.messages.length + (entry.messages.length === 1 ? ' report' : ' reports') + ' and an aggregate score of ' + agg + ' (' + STATUS_LABEL[status] + ').';
+
+  document.getElementById('ss-result').style.display = 'block';
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

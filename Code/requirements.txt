@@ -1,0 +1,8 @@
+fastapi>=0.111
+uvicorn[standard]>=0.29
+sqlalchemy>=2.0
+pydantic>=2.0
+python-dotenv>=1.0
+
+# Add when moving from SQLite to Postgres:
+# psycopg[binary]>=3.1
