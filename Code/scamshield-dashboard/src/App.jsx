@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import NumberTable from './components/NumberTable.jsx'
 import NumberDetail from './components/NumberDetail.jsx'
+import MessageReview from './components/MessageReview.jsx'
 import { listNumbers, getNumber, moderateNumber, API_BASE_URL, ApiError } from './api.js'
 
 const FILTERS = [
@@ -126,6 +127,7 @@ export default function App() {
           />
         )}
       </main>
+      <MessageReview moderatorKey={moderatorKey} />
     </div>
   )
 }
