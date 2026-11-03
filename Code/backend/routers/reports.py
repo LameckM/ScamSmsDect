@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas, scoring, services
 from ..database import get_db
+from ..ml.predictor import predict_scam
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -20,13 +21,23 @@ def submit_report(payload: schemas.ReportCreate, db: Session = Depends(get_db)):
     patterns = services.load_patterns(db)
     corpus = services.load_corpus(db, phone.id)
     result = scoring.analyze_message(payload.message, patterns=patterns, corpus=corpus)
+    ml_result = predict_scam(payload.message)
+    message_score = result.score
+    flags = list(result.flags)
+    if ml_result is not None:
+        ml_risk = ml_result['scam_score'] * 100.0
+        # Rule score remains dominant; combined score is advisory, not calibrated probability.
+        message_score = round(min(100.0, 0.65 * result.score + 0.35 * ml_risk), 1)
+        flags.append(f"ML model scam score: {round(ml_risk)} / 100 (advisory)")
+        if ml_risk >= 65:
+            flags.append("ML model recommends moderator review")
 
     report = models.Report(
         phone_number_id=phone.id,
         reporter_id=reporter.id,
         message_content=payload.message,
-        message_score=result.score,
-        flags=result.flags,
+        message_score=message_score,
+        flags=flags,
     )
     db.add(report)
     db.flush()
