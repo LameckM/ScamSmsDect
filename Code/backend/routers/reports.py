@@ -46,8 +46,8 @@ def submit_report(payload: schemas.ReportCreate, db: Session = Depends(get_db)):
     db.commit()
 
     return schemas.ReportResult(
-        message_score=result.score,
-        flags=result.flags,
+        message_score=message_score,
+        flags=flags,
         number=phone.number,
         report_count=report_count,
         aggregate_score=aggregate,
