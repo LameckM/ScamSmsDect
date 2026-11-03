@@ -95,3 +95,16 @@ class ScamPattern(Base):
     phrase: Mapped[str] = mapped_column(String(128), unique=True)
     category: Mapped[str] = mapped_column(String(32))  # lottery | urgency | money | sensitive_info
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ReportReview(Base):
+    """Latest moderator-confirmed label for an individual message report."""
+    __tablename__ = "report_reviews"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), unique=True, index=True)
+    label: Mapped[str] = mapped_column(String(16))  # scam | legitimate
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    report: Mapped["Report"] = relationship()
