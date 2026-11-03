@@ -6,3 +6,7 @@ python-dotenv>=1.0
 
 # Add when moving from SQLite to Postgres:
 # psycopg[binary]>=3.1
+
+# Hybrid SMS classifier training and model artifacts
+scikit-learn>=1.4
+joblib>=1.3
