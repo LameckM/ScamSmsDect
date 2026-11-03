@@ -1,6 +1,7 @@
 """Moderator review endpoints. Phone-number decisions are not message labels."""
 from datetime import datetime, timezone
 import os
+import json
 import shutil
 from pathlib import Path
 from typing import Literal
@@ -80,6 +81,16 @@ def activate_candidate():
     metrics = directory / "candidate_metrics.json"
     if not candidate.is_file() or not metrics.is_file():
         raise HTTPException(status_code=409, detail="No complete candidate model is available")
+    with metrics.open("r", encoding="utf-8") as handle:
+        report = json.load(handle)
+    min_precision = float(os.getenv("SCAM_ML_MIN_PRECISION", "0.70"))
+    min_recall = float(os.getenv("SCAM_ML_MIN_RECALL", "0.50"))
+    if report.get("scam_precision", 0) < min_precision or report.get("scam_recall", 0) < min_recall:
+        raise HTTPException(status_code=409, detail={
+            "message": "Candidate did not meet activation quality gates",
+            "required": {"scam_precision": min_precision, "scam_recall": min_recall},
+            "candidate": {"scam_precision": report.get("scam_precision"), "scam_recall": report.get("scam_recall")}
+        })
     active.parent.mkdir(parents=True, exist_ok=True)
     temporary = active.with_suffix(active.suffix + ".new")
     shutil.copyfile(candidate, temporary)
